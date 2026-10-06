@@ -181,23 +181,4 @@ select {
 }
 .empty { color: #d8b4fe; text-align: center; }
 
-.keys-box {
-  background: rgba(40, 10, 50, 0.6);
-  border: 1px solid rgba(232, 121, 249, 0.3);
-  border-radius: 16px;
-  padding: 1rem;
-  margin-bottom: 1rem;
-}
-.keys-box p { font-size: 0.85rem; color: #e9d5ff; margin-top: 0; }
-.keys-box input {
-  display: block;
-  width: 100%;
-  box-sizing: border-box;
-  margin-bottom: 0.5rem;
-  padding: 0.6rem 1rem;
-  border-radius: 12px;
-  border: 1px solid #a855f7;
-  background: rgba(40, 10, 50, 0.8);
-  color: #fdf4ff;
-}
-header .history-toggle { margin: 0 0.3rem; }
+

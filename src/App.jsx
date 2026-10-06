@@ -2,16 +2,6 @@ import { useState, useEffect } from 'react'
 import { generateResponses, PROVIDERS, STYLES } from './services/ai'
 import './App.css'
 
-const ENV_KEYS = {
-  gemini: import.meta.env.VITE_GEMINI_KEY,
-  groq: import.meta.env.VITE_GROQ_KEY,
-  openrouter: import.meta.env.VITE_OPENROUTER_KEY,
-}
-
-function loadKey(id) {
-  return localStorage.getItem(`key_${id}`) || ENV_KEYS[id] || ''
-}
-
 function App() {
   const [mode, setMode] = useState('imagen')
   const [image, setImage] = useState(null)
@@ -25,8 +15,6 @@ function App() {
   const [copied, setCopied] = useState(null)
   const [history, setHistory] = useState([])
   const [showHistory, setShowHistory] = useState(false)
-  const [keys, setKeys] = useState({ gemini: loadKey('gemini'), groq: loadKey('groq'), openrouter: loadKey('openrouter') })
-  const [showKeys, setShowKeys] = useState(false)
 
   useEffect(() => {
     fetch('/api/historial')
@@ -38,11 +26,6 @@ function App() {
         } catch {}
       })
   }, [])
-
-  function saveKey(id, value) {
-    localStorage.setItem(`key_${id}`, value)
-    setKeys({ ...keys, [id]: value })
-  }
 
   async function persistHistory(updated) {
     try {
@@ -106,7 +89,6 @@ function App() {
     try {
       const results = await generateResponses(
         provider,
-        keys[provider],
         style,
         mode === 'texto' ? chatText : '',
         mode === 'imagen' ? image : null
@@ -151,25 +133,7 @@ function App() {
         <button className="history-toggle" onClick={() => setShowHistory(!showHistory)}>
           🕘 Historial ({history.length})
         </button>
-        <button className="history-toggle" onClick={() => setShowKeys(!showKeys)}>
-          🔑 API keys
-        </button>
       </header>
-
-      {showKeys && (
-        <div className="keys-box">
-          <p>Las keys se guardan en tu navegador, nunca en la web.</p>
-          {Object.keys(PROVIDERS).map((id) => (
-            <input
-              key={id}
-              type="password"
-              placeholder={`API key de ${PROVIDERS[id].name}`}
-              value={keys[id]}
-              onChange={(e) => saveKey(id, e.target.value)}
-            />
-          ))}
-        </div>
-      )}
 
       {showHistory ? (
         <div className="history">

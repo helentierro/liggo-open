@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: liggo-open-api
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: ""
+    startCommand: node server.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: GEMINI_KEY
+        sync: false
+      - key: GROQ_KEY
+        sync: false
+      - key: OPENROUTER_KEY
+        sync: false
+      - key: ALLOWED_ORIGIN
+        value: https://helentierro.github.io
