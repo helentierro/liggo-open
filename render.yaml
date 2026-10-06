@@ -4,9 +4,10 @@ services:
     runtime: node
     plan: free
     region: oregon
-    buildCommand: ""
+    buildCommand: npm install --omit=dev
     startCommand: node server.js
     healthCheckPath: /api/health
+    autoDeploy: true
     envVars:
       - key: GEMINI_KEY
         sync: false
