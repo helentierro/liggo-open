@@ -27,3 +27,5 @@ dist-ssr
 
 historial.json
 src/*.bak
+
+historial.backup.json

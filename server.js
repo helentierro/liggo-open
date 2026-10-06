@@ -97,21 +97,38 @@ app.post('/api/respuestas', async (req, res) => {
 const historialOn = process.env.HISTORIAL === '1'
 
 if (historialOn) {
-  const readDb = () => {
+  const DB_BAK = path.join(__dirname, 'historial.backup.json')
+  const MAX_ITEMS = 50
+
+  function readDb() {
     try {
       return JSON.parse(fs.readFileSync(DB, 'utf-8'))
-    } catch {
+    } catch (err) {
+      if (err.code !== 'ENOENT') {
+        try {
+          const backup = JSON.parse(fs.readFileSync(DB_BAK, 'utf-8'))
+          console.log('historial.json corrupto: recuperado desde historial.backup.json')
+          return backup
+        } catch {
+          console.log('historial.json ilegible y sin respaldo: se empieza de cero')
+        }
+      }
       return []
     }
   }
-  const writeDb = (data) => fs.writeFileSync(DB, JSON.stringify(data, null, 2))
+
+  function writeDb(data) {
+    if (fs.existsSync(DB)) fs.copyFileSync(DB, DB_BAK)
+    fs.writeFileSync(DB, JSON.stringify(data, null, 2))
+  }
 
   app.get('/api/historial', (req, res) => res.json(readDb()))
   app.post('/api/historial', (req, res) => {
     const items = readDb()
+    const total = items.length + 1
     items.unshift({ ...req.body, id: Date.now() })
-    writeDb(items.slice(0, 20))
-    res.json({ ok: true })
+    writeDb(items.slice(0, MAX_ITEMS))
+    res.json({ ok: true, total, guardadas: Math.min(total, MAX_ITEMS) })
   })
   app.delete('/api/historial/:id', (req, res) => {
     writeDb(readDb().filter((i) => String(i.id) !== req.params.id))

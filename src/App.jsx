@@ -14,25 +14,28 @@ function App() {
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(null)
   const [history, setHistory] = useState([])
+  const [historialDisponible, setHistorialDisponible] = useState(null)
+  const [aviso, setAviso] = useState('')
+  const [verTodas, setVerTodas] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
 
-  useEffect(() => {
-    fetch('/api/historial')
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then(setHistory)
-      .catch(() => {
-        try {
-          setHistory(JSON.parse(localStorage.getItem('historial') || '[]'))
-        } catch {}
-      })
-  }, [])
+  const VISIBLES = 20
 
-  async function persistHistory(updated) {
+  async function refreshHistory() {
     try {
-      localStorage.setItem('historial', JSON.stringify(updated))
-    } catch {}
-    setHistory(updated)
+      const r = await fetch('/api/historial')
+      if (!r.ok) throw new Error('no disponible')
+      const data = await r.json()
+      setHistory(data)
+      setHistorialDisponible(true)
+    } catch {
+      setHistorialDisponible(false)
+    }
   }
+
+  useEffect(() => {
+    refreshHistory()
+  }, [])
 
   function handleImage(e) {
     const file = e.target.files[0]
@@ -66,18 +69,17 @@ function App() {
       imagen: thumb || null,
       respuestas: results,
     }
-    entry.id = Date.now()
-    const updated = [entry, ...history].slice(0, 20)
-    try {
-      await fetch('/api/historial', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(entry),
-      })
-      const r = await fetch('/api/historial')
-      if (r.ok) { setHistory(await r.json()); return }
-    } catch {}
-    persistHistory(updated)
+    const r = await fetch('/api/historial', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(entry),
+    })
+    if (!r.ok) {
+      setAviso('No se pudo guardar en historial.json (disco D). Revisa que el servidor esté abierto.')
+      return
+    }
+    setAviso('')
+    await refreshHistory()
   }
 
   async function handleGenerate() {
@@ -104,17 +106,27 @@ function App() {
   }
 
   async function deleteEntry(id) {
-    try {
-      await fetch(`/api/historial/${id}`, { method: 'DELETE' })
-    } catch {}
-    persistHistory(history.filter((h) => h.id !== id))
+    const r = await fetch(`/api/historial/${id}`, { method: 'DELETE' })
+    if (!r.ok) return setAviso('No se pudo eliminar de historial.json')
+    setAviso('')
+    refreshHistory()
   }
 
   async function clearHistory() {
-    try {
-      await fetch('/api/historial', { method: 'DELETE' })
-    } catch {}
-    persistHistory([])
+    const r = await fetch('/api/historial', { method: 'DELETE' })
+    if (!r.ok) return setAviso('No se pudo vaciar historial.json')
+    setAviso('')
+    refreshHistory()
+  }
+
+  function exportHistory() {
+    const blob = new Blob([JSON.stringify(history, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `historial-liggo-${new Date().toISOString().slice(0, 10)}.json`
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   function copy(text, key) {
@@ -135,11 +147,24 @@ function App() {
         </button>
       </header>
 
+      {aviso && <p className="banner">{aviso}</p>}
+
       {showHistory ? (
         <div className="history">
-          {history.length === 0 && <p className="empty">Sin historial todavía</p>}
-          {history.length > 0 && <button className="clear" onClick={clearHistory}>Vaciar historial</button>}
-          {history.map((h) => (
+          {historialDisponible === false && (
+            <p className="empty">
+              El historial está disponible solo en la versión local de tu PC (se guarda en
+              <code> historial.json</code>, disco D). En la web pública no se guarda.
+            </p>
+          )}
+          {historialDisponible === true && history.length === 0 && <p className="empty">Sin historial todavía</p>}
+          {history.length > 0 && (
+            <div className="history-actions">
+              <button className="clear" onClick={clearHistory}>Vaciar historial</button>
+              <button className="clear" onClick={exportHistory}>⬇ Exportar</button>
+            </div>
+          )}
+          {history.slice(0, verTodas ? history.length : VISIBLES).map((h) => (
             <div key={h.id} className="history-item">
               <div className="history-meta">
                 <span>{styleLabel(h.estilo)}</span> · <span>{h.fecha}</span>
@@ -147,7 +172,7 @@ function App() {
               </div>
               {h.imagen && <img src={h.imagen} alt="chat" className="thumb" />}
               {h.chatTexto && <p className="history-chat">{h.chatTexto.slice(0, 120)}{h.chatTexto.length > 120 ? '…' : ''}</p>}
-              {h.respuestas.map((r, i) => (
+              {(h.respuestas || []).map((r, i) => (
                 <div key={i} className="response small">
                   <p>{r}</p>
                   <button onClick={() => copy(r, `${h.id}-${i}`)}>{copied === `${h.id}-${i}` ? '¡Copiado!' : 'Copiar'}</button>
@@ -155,6 +180,11 @@ function App() {
               ))}
             </div>
           ))}
+          {history.length > VISIBLES && (
+            <button className="ver-mas" onClick={() => setVerTodas(!verTodas)}>
+              {verTodas ? 'Ver solo las 20 más recientes' : `Ver las ${history.length} entradas (se guardan las 50 más recientes)`}
+            </button>
+          )}
         </div>
       ) : (
         <>

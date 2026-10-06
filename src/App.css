@@ -115,6 +115,41 @@ select {
 
 .error { color: #fca5a5; }
 
+.banner {
+  background: rgba(153, 27, 27, 0.55);
+  border: 1px solid #f87171;
+  color: #fecaca;
+  border-radius: 12px;
+  padding: 0.8rem 1rem;
+  margin: 0 0 1rem;
+}
+
+.history-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+.history-actions .clear { margin-top: 0; }
+
+.ver-mas {
+  display: block;
+  width: 100%;
+  margin-top: 1rem;
+  padding: 0.7rem 1rem;
+  border-radius: 999px;
+  border: 1px dashed #c084fc;
+  background: transparent;
+  color: #e9d5ff;
+  cursor: pointer;
+}
+.ver-mas:hover { background: rgba(192, 132, 252, 0.15); }
+
+.empty code {
+  background: rgba(255, 255, 255, 0.12);
+  padding: 0.1rem 0.35rem;
+  border-radius: 6px;
+}
+
 .response {
   background: rgba(40, 10, 50, 0.75);
   border: 1px solid rgba(232, 121, 249, 0.35);
